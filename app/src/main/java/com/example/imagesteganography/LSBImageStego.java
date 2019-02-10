@@ -18,6 +18,12 @@ public class LSBImageStego {
     private int coverImage_rows;
     private int coverImage_columns;
 
+
+    /**
+     *
+     * @param coverImage
+     * @param secretMessage
+     */
     public LSBImageStego(Bitmap coverImage , String secretMessage){
         this.coverImage = coverImage.copy(Bitmap.Config.ARGB_8888 , true);
         this.coverImage_rows = this.coverImage.getHeight();
@@ -31,26 +37,43 @@ public class LSBImageStego {
 //        Log.i("URI", new Integer(this.originalSecretMessageLength).toString());
     }
 
+    /**
+     *
+     * @return
+     */
     public Bitmap getCoverImage(){
         return this.coverImage;
     }
 
+    /**
+     *
+     * @return
+     */
     public String getSecretMessage(){
         return this.secretMessage;
     }
 
+    /**
+     *
+     * @param coverImage
+     */
     public LSBImageStego(Bitmap coverImage){
         this.coverImage = coverImage.copy(Bitmap.Config.ARGB_8888 , true);
         this.coverImage_rows = this.coverImage.getHeight();
         this.coverImage_columns =  this.coverImage.getWidth();
     }
 
-
+    /**
+     *
+     */
     public void decode(){
         this.getOriginalSecretMessageLength_FROM_Image();
         this.decodeMessageBinaryFromImage();
     }
 
+    /**
+     *
+     */
     private void decodeMessageBinaryFromImage(){
         int retrieved = 0;
         StringBuilder sb = new StringBuilder();
@@ -91,6 +114,11 @@ public class LSBImageStego {
         }
     }
 
+    /**
+     *
+     * @param binary
+     * @return
+     */
     private String decodeMsgFromBinary(String binary){
         StringBuilder sb = new StringBuilder();
         for(int i=0 ; i<= (binary.length() -8) ; i+=8 ){
@@ -101,11 +129,17 @@ public class LSBImageStego {
         return sb.toString();
     }
 
+    /**
+     *
+     */
     public void encode(){
         this.encodeMessage();
         this.encodeMessageLength();
     }
 
+    /**
+     *
+     */
     private void getOriginalSecretMessageLength_FROM_Image(){
         StringBuilder sb = new StringBuilder();
         for(int col = 0; col<= this.coverImage_columns-1 ; col++){
@@ -124,6 +158,9 @@ public class LSBImageStego {
         this.originalSecretMessageLength = Integer.parseInt(sb.toString() , 2);
     }
 
+    /**
+     *
+     */
     private void encodeMessageLength(){
         String originalBinary_OF_MsgLength = Integer.toBinaryString(this.originalSecretMessageLength);
         String encodableBinary = this.getEncodableBinaryOfMsgLengthBinary(originalBinary_OF_MsgLength);
@@ -165,11 +202,19 @@ public class LSBImageStego {
         }
     }
 
+    /**
+     *
+     * @param originalBinary
+     * @return
+     */
     private String getEncodableBinaryOfMsgLengthBinary(String originalBinary){
         return String.join("" , Collections.nCopies(
                 (this.coverImage_columns * 2 - (originalBinary.length())), "0")) + originalBinary;
     }
 
+    /**
+     *
+     */
     private void encodeMessage(){
         int count = 0;
         int remaining = this.Binary_OF_SecretMessage.length();
@@ -225,10 +270,17 @@ public class LSBImageStego {
         }
     }
 
+    /**
+     *
+     * @return
+     */
     public boolean checkEncodability(){
         return this.Binary_OF_SecretMessage.length() <= ((this.coverImage_rows - 1)*this.coverImage_columns*2 ) ;
     }
 
+    /**
+     *
+     */
     private void makeBinaryStringFromMessage(){
         StringBuilder sb = new StringBuilder();
         for(int i=0; i<= this.originalSecretMessageLength-1 ; i++){
@@ -239,6 +291,11 @@ public class LSBImageStego {
         Log.i("URI" ,"BINARY MESSAGE:"+ this.Binary_OF_SecretMessage);
     }
 
+    /**
+     *
+     * @param ascii
+     * @return
+     */
     private String return8BinaryOfAscii(int ascii){
         String binary = Integer.toBinaryString(ascii);
         return String.join("" , Collections.nCopies(8-(binary.length()) , "0")) + binary;
