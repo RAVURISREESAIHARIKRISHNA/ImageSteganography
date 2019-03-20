@@ -1,0 +1,204 @@
+<html>
+<head>
+<title>EncodeActivity.java</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #000080; font-weight: bold;}
+.s1 { color: #000000;}
+.s2 { color: #0000ff;}
+.s3 { color: #008000; font-weight: bold;}
+.s4 { color: #808080; font-style: italic;}
+.ln { color: #999999; font-weight: normal; font-style: normal; }
+</style>
+</head>
+<body bgcolor="#ffffff">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+EncodeActivity.java</font>
+</center></td></tr></table>
+<pre><a name="l1"><span class="ln">1    </span></a><span class="s0">package </span>com.example.imagesteganography;
+
+<span class="s0">import </span>android.content.Intent;
+<span class="s0">import </span>android.graphics.Bitmap;
+<span class="s0">import </span>android.graphics.BitmapFactory;
+<span class="s0">import </span>android.net.Uri;
+<span class="s0">import </span>android.os.Bundle;
+<span class="s0">import </span>android.os.Environment;
+<span class="s0">import </span>android.provider.MediaStore;
+<span class="s0">import </span>android.support.v7.app.AppCompatActivity;
+<span class="s0">import </span>android.text.Editable;
+<span class="s0">import </span>android.text.TextWatcher;
+<span class="s0">import </span>android.util.Log;
+<span class="s0">import </span>android.view.View;
+<span class="s0">import </span>android.widget.Button;
+<span class="s0">import </span>android.widget.EditText;
+<span class="s0">import </span>android.widget.ImageView;
+<span class="s0">import </span>android.widget.Toast;
+
+<span class="s0">import </span>java.io.File;
+<span class="s0">import </span>java.io.FileOutputStream;
+<span class="s0">import </span>java.util.Random;
+
+<span class="s0">public class </span>EncodeActivity <span class="s0">extends </span>AppCompatActivity {
+
+    <span class="s0">private static final int  </span>SELECT_IMAGE_CODE = <span class="s2">1</span>;
+    <span class="s0">private </span>Uri globalUri;
+    <span class="s0">protected </span>Bitmap coverImage;
+    <span class="s0">protected </span>String secretMessage;
+
+    @Override
+    <span class="s0">public void </span>onSaveInstanceState(Bundle savedInstanceState){
+        savedInstanceState.putParcelable(<span class="s3">&quot;globalUri&quot; </span>, <span class="s0">this</span>.globalUri);
+        savedInstanceState.putString(<span class="s3">&quot;secretMessage&quot; </span>, <span class="s0">this</span>.secretMessage);
+        <span class="s0">super</span>.onSaveInstanceState(savedInstanceState);
+    }
+
+    @Override
+    <span class="s0">public void </span>onRestoreInstanceState(Bundle savedInstanceState){
+        <span class="s0">this</span>.globalUri = savedInstanceState.getParcelable(<span class="s3">&quot;globalUri&quot;</span>);
+        <span class="s0">this</span>.secretMessage = savedInstanceState.getString(<span class="s3">&quot;secretMessage&quot;</span>);
+        <span class="s0">this</span>.drawImageFromGlobalUri();
+        EditText message = (EditText) findViewById(R.id.editText);
+        message.setText(<span class="s0">this</span>.secretMessage);
+    }
+    <span class="s0">private void </span>setDefaultValues(){
+        <span class="s0">this</span>.coverImage = <span class="s0">null</span>;
+        <span class="s0">this</span>.secretMessage = <span class="s0">null</span>;
+    }
+    @Override
+    <span class="s0">protected void </span>onCreate(Bundle savedInstanceState){
+        <span class="s0">super</span>.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_encode);
+
+        <span class="s0">this</span>.setDefaultValues();
+        Button selectImage = (Button) findViewById(R.id.selectImage);
+        Button encodeMessage = (Button) findViewById(R.id.encodeMessage);
+
+
+        selectImage.setOnClickListener(
+                <span class="s0">new </span>Button.OnClickListener(){
+
+                    @Override
+                    <span class="s0">public void </span>onClick(View v){
+                        selectImageFromGallery();
+                    }
+                }
+        );
+
+        <span class="s0">final </span>EditText secretMessageFeild = (EditText) findViewById(R.id.editText);
+
+        secretMessageFeild.addTextChangedListener(
+                <span class="s0">new </span>TextWatcher() {
+                    @Override
+                    <span class="s0">public void </span>beforeTextChanged(CharSequence charSequence, <span class="s0">int </span>i, <span class="s0">int </span>i1, <span class="s0">int </span>i2) {
+
+                    }
+
+                    @Override
+                    <span class="s0">public void </span>onTextChanged(CharSequence charSequence, <span class="s0">int </span>i, <span class="s0">int </span>i1, <span class="s0">int </span>i2) {
+                        secretMessage = secretMessageFeild.getText().toString();
+                    }
+
+                    @Override
+                    <span class="s0">public void </span>afterTextChanged(Editable editable) {
+
+                    }
+                }
+        );
+
+        encodeMessage.setOnClickListener(
+                <span class="s0">new </span>Button.OnClickListener(){
+
+                    @Override
+                    <span class="s0">public void </span>onClick(View v){
+                        <span class="s0">if</span>(globalUri == <span class="s0">null</span>){
+                            Toast.makeText(getApplicationContext(), <span class="s3">&quot;Please select an Image&quot;</span>, Toast.LENGTH_LONG).show();
+                            <span class="s0">return</span>;
+                        }
+                        <span class="s0">if</span>(((EditText) findViewById(R.id.editText)).getText().toString().equals(<span class="s3">&quot;&quot;</span>)){
+                            Toast.makeText(getApplicationContext() , <span class="s3">&quot;Please enter the Secret Message&quot; </span>, Toast.LENGTH_LONG).show();
+                            <span class="s0">return</span>;
+                        }
+                        <span class="s0">if</span>(secretMessage != <span class="s0">null </span>&amp;&amp; globalUri != <span class="s0">null</span>){
+<span class="s4">//                            Toast.makeText(getApplicationContext() , &quot;READY&quot; , Toast.LENGTH_LONG).show();</span>
+                            BitmapFactory.Options bmpFactoryOptions = <span class="s0">new </span>BitmapFactory.Options();
+                            bmpFactoryOptions.inPreferredConfig = Bitmap.Config.RGB_565;
+                            Bitmap bmp = <span class="s0">null</span>;
+                            <span class="s0">try</span>{
+                                bmp = MediaStore.Images.Media.getBitmap( getContentResolver() , globalUri);
+                            }<span class="s0">catch</span>(Exception e){
+                                Log.i(<span class="s3">&quot;URI&quot; </span>, <span class="s3">&quot;Exception Handled&quot;</span>);
+                            }
+                            coverImage = bmp;
+
+                            secretMessage = ((EditText) findViewById(R.id.editText)).getText().toString();
+
+                            startEncoding();
+                        }
+                    }
+                }
+        );
+    }
+
+    <span class="s0">private void </span>startEncoding(){
+        <a href="LSBImageStego.java.html">LSBImageStego</a> obj = <span class="s0">new <a href="LSBImageStego.java.html">LSBImageStego</a></span>(<span class="s0">this</span>.coverImage , <span class="s0">this</span>.secretMessage);
+
+        <span class="s0">if</span>(!obj.checkEncodability()){
+            Toast.makeText(getApplicationContext() , <span class="s3">&quot;Message cannot be Encoded.Try a different Message with different Length&quot; </span>, Toast.LENGTH_LONG).show();
+            <span class="s0">return</span>;
+        }
+        obj.encode();
+        <span class="s0">this</span>.writeToFile(obj.getCoverImage());
+
+
+    }
+
+    @Override
+    <span class="s0">protected void </span>onActivityResult(<span class="s0">int </span>requestCode , <span class="s0">int </span>resultCode , Intent data){
+        <span class="s0">if</span>(resultCode == RESULT_OK){
+            Uri imageUri = data.getData();
+            <span class="s0">this</span>.globalUri = imageUri;
+            <span class="s0">this</span>.drawImageFromGlobalUri();
+        }
+    }
+
+    <span class="s0">private void </span>selectImageFromGallery(){
+        Intent intent = <span class="s0">new </span>Intent(Intent.ACTION_GET_CONTENT);
+        intent.setType(<span class="s3">&quot;image/png&quot;</span>);
+        <span class="s0">if</span>(intent.resolveActivity(getPackageManager())!= <span class="s0">null</span>){
+            startActivityForResult(intent , SELECT_IMAGE_CODE);
+        }
+    }
+
+    <span class="s0">private void </span>drawImageFromGlobalUri(){
+        ImageView imageView = (ImageView) findViewById(R.id.imageView);
+        imageView.setImageURI(<span class="s0">this</span>.globalUri);
+    }
+
+    <span class="s0">private void </span>writeToFile(Bitmap bm){
+        String root = Environment.getExternalStorageDirectory().toString();
+        File myDir = <span class="s0">new </span>File(root + <span class="s3">&quot;/req_images&quot;</span>);
+        myDir.mkdirs();
+        Random generator = <span class="s0">new </span>Random();
+        <span class="s0">int </span>n = <span class="s2">10000</span>;
+        n = generator.nextInt(n);
+        String fname = <span class="s3">&quot;Image-&quot; </span>+ n + <span class="s3">&quot;.png&quot;</span>;
+        File file = <span class="s0">new </span>File(myDir, fname);
+        Log.i(<span class="s3">&quot;URI&quot;</span>, <span class="s3">&quot;&quot; </span>+ file);
+        <span class="s0">if </span>(file.exists())
+            file.delete();
+        <span class="s0">try </span>{
+            FileOutputStream out = <span class="s0">new </span>FileOutputStream(file);
+            bm.compress(Bitmap.CompressFormat.PNG, <span class="s2">100</span>, out);
+            out.flush();
+            out.close();
+            Toast.makeText(getApplicationContext() , <span class="s3">&quot;Image saved @&quot;</span>+fname , Toast.LENGTH_LONG).show();
+        } <span class="s0">catch </span>(Exception e) {
+            e.printStackTrace();
+        }
+    }
+}
+</pre>
+</body>
+</html>
